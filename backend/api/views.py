@@ -4,7 +4,7 @@ from django.http import HttpRequest, HttpResponse
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import CheckRequire, require
 from models import *
-from utils.utils_jwt import generate_jwt_token
+from utils.utils_jwt import generate_jwt_token,check_jwt_token
 from django.db.models import Q
 # Create your views here.
 
@@ -62,3 +62,17 @@ def login(req:HttpRequest):
             return request_failed(2,"Wrong password",401)
     except:
         return request_failed(1, "User not found",401)
+
+def delete_account(req:HttpRequest):
+    if req.method!="POST":
+        return BAD_METHOD
+    body = json.loads(req.body.decode("utf-8"))
+    jwt_token = req.headers.get("Authorization")
+    if check_jwt_token(jwt_token) ==None:
+        return request_failed(2, "Invalid or expired JWT", 401)
+    username=check_jwt_token(jwt_token)["username"]
+    possible_user=User.objects.get(name=username)
+    possible_user.delete()
+    return request_success()
+    
+

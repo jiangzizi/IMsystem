@@ -75,4 +75,39 @@ def delete_account(req:HttpRequest):
     possible_user.delete()
     return request_success()
     
+def setting(req:HttpRequest):
+    if req.method!="POST":
+        return BAD_METHOD
+    jwt_token = req.headers.get("Authorization")
+    if check_jwt_token(jwt_token) ==None:
+        return request_failed(2, "Invalid or expired JWT", 401)
+    body = json.loads(req.body.decode("utf-8"))
+    username = require(body, "userName", "string",
+                       err_msg="Missing or error type of [userName]")
+    password = require(body, "password", "string",
+                       err_msg="Missing or error type of [password]")
+    email = require(body, "email", "string",
+                    err_msg="Missing or error type of [email]")
+    telephone = require(body, "telephone", "telephone",
+                        err_msg="Missing or error type of [telephone]")
+    old_name=check_jwt_token(jwt_token)["username"]
 
+    duplicate_user = User.objects.filter(Q(userName=username) | Q(
+        email=email) | Q(telephone=telephone)).first()
+    if duplicate_user:
+        if duplicate_user.userName == username:
+            return request_failed(6, "Username already in use",409)
+        elif duplicate_user.email == email:
+            return request_failed(6, "Email already in use",409)
+        elif duplicate_user.telephone == telephone:
+            return request_failed(6, "Telephone already in use",409)
+    
+    user=User.objects.get(name=old_name)
+    user.name=username
+    user.set_password(password)
+    user.email=email
+    user.telephone=telephone
+    User.save()
+    return request_success()
+
+    

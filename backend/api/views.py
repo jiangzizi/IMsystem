@@ -34,11 +34,11 @@ def register(req: HttpRequest):
         email=email) | Q(telephone=telephone)).first()
     if duplicate_user:
         if duplicate_user.userName == username:
-            return request_failed(1, "Username already in use")
+            return request_failed(1, "Username already in use",409)
         elif duplicate_user.email == email:
-            return request_failed(2, "Email already in use")
+            return request_failed(2, "Email already in use",409)
         elif duplicate_user.telephone == telephone:
-            return request_failed(2, "Telephone already in use")
+            return request_failed(2, "Telephone already in use",409)
 
     newUser = User(userName=username, password="",
                    email=email, telephone=telephone)
@@ -46,3 +46,19 @@ def register(req: HttpRequest):
     newUser.save()
     token = generate_jwt_token(username, email)
     return request_success({"token": token})
+def login(req:HttpRequest):
+    if req.method!="POST":
+        return BAD_METHOD
+    body = json.loads(req.body.decode("utf-8"))
+    
+    username = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    password = require(body, "password", "string", err_msg="Missing or error type of [password]")
+    try :
+        possible_user=User.objects.get(userName=username)
+        if(possible_user.check_password(password)):
+            email=possible_user.email
+            return request_success({"token":generate_jwt_token(username,email)})
+        else:
+            return request_failed(2,"Wrong password",401)
+    except:
+        return request_failed(1, "User not found",401)

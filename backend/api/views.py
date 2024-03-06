@@ -110,4 +110,21 @@ def setting(req:HttpRequest):
     User.save()
     return request_success()
 
+def find_user(req:HttpRequest):
+    if req.method!="GET":
+        return BAD_METHOD
+    body = json.loads(req.body.decode("utf-8"))
+    username = require(body, "userName", "string",
+                       err_msg="Missing or error type of [userName]")
+    if username==None:
+        return request_failed(1,"Need username",400)
+    try:
+        possible_user=User.objects.get(name=username)
+        data={"userName":possible_user.userName,"email":possible_user.email,"telephone":possible_user.telephone}
+        json_data={"user":data}
+        return request_success(json_data)
+    except:
+        return request_failed(2,"No such user", 404)
+    
+    
     

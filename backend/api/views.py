@@ -5,6 +5,7 @@ from utils.utils_request import BAD_METHOD, request_failed, request_success, ret
 from utils.utils_require import CheckRequire, require
 from models import *
 from utils.utils_jwt import generate_jwt_token
+from django.db.models import Q
 # Create your views here.
 
 
@@ -28,21 +29,20 @@ def register(req: HttpRequest):
                     err_msg="Missing or error type of [email]")
     telephone = require(body, "telephone", "telephone",
                         err_msg="Missing or error type of [telephone]")
-    try:
-        possible_user = User.object.get(userName=username)
-        return request_failed(1, "Username already in use")
-    except:
-        try:
-            possible_user = User.objects.get(email=email)
+
+    duplicate_user = User.objects.filter(Q(userName=username) | Q(
+        email=email) | Q(telephone=telephone)).first()
+    if duplicate_user:
+        if duplicate_user.userName == username:
+            return request_failed(1, "Username already in use")
+        elif duplicate_user.email == email:
             return request_failed(2, "Email already in use")
-        except:
-            try:
-                possible_user = User.objects.get(telephone=telephone)
-                return request_failed(2, "Telephone already in use")
-            except:
-                newUser = User(userName=username, password="",
-                               email=email, telephone=telephone)
-                newUser.set_password(password)
-                newUser.save()
-                token = generate_jwt_token(username, email)
-                return request_success({"token": token})
+        elif duplicate_user.telephone == telephone:
+            return request_failed(2, "Telephone already in use")
+
+    newUser = User(userName=username, password="",
+                   email=email, telephone=telephone)
+    newUser.set_password(password)
+    newUser.save()
+    token = generate_jwt_token(username, email)
+    return request_success({"token": token})

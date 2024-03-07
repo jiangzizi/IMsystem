@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import CheckRequire, require
-from models import *
+from .models import User
 from utils.utils_jwt import generate_jwt_token,check_jwt_token
 from django.db.models import Q
 # Create your views here.

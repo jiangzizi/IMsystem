@@ -1,2 +1,2 @@
 # 包含子目录中的 .gitignore 文件内容
-include: myapp/.gitignore
+frontend/node_modules
